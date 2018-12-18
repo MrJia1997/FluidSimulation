@@ -331,3 +331,6 @@ ASALocalRun/
 
 # Try to fix Environment diff
 *.vcxproj
+
+# Vscode configuration
+.vscode
