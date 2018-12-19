@@ -36,6 +36,12 @@
     <ClCompile Include="fluidsimulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="geometry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="simulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="fluidsimulation.h">
@@ -53,10 +59,13 @@
     </QtRcc>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="particle.h">
+    <ClInclude Include="kernel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kernel.h">
+    <ClInclude Include="geometry.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="simulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

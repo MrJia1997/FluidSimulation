@@ -334,3 +334,6 @@ ASALocalRun/
 
 # Vscode configuration
 .vscode
+
+# VS Qt project generate ui files
+GeneratedFiles/

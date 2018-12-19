@@ -20,7 +20,7 @@ namespace SmoothKernel {
 
     Vec3D Poly6Gradient(const double &r, const Vec3D &rij, const double &h) {
         if (r < 0 || r >= h)
-            return Vec3D(0.0);
+            return Vec3D(0.0, 0.0, 0.0);
 
         double q = h * h - r * r;
         double alpha = (-945.0) / (32.0 * PI * pow(h, 9));
@@ -47,7 +47,7 @@ namespace SmoothKernel {
 
     Vec3D SpikyGradient(const double &r, const Vec3D &rij, const double &h) {
         if (r < 0 || r >= h)
-            return Vec3D(0.0);
+            return Vec3D(0.0, 0.0, 0.0);
         
         double q = h - r;
         double alpha = (-45.0) / (PI * pow(h, 6));
