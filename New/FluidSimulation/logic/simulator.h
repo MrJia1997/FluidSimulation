@@ -29,6 +29,7 @@ public:
     void clearFluid();
     double getDensity(const Particle& p);
     void simulate();
+    void calcIsosurface();
 };
 
 

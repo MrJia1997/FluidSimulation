@@ -337,3 +337,6 @@ ASALocalRun/
 
 # VS Qt project generate ui files
 GeneratedFiles/
+
+# Qt creator build
+build*/

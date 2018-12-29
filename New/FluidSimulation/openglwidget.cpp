@@ -98,7 +98,7 @@ void OpenGLWidget::initializeGL()
 
     QTimer* timerSimulator = new QTimer(this);
     QObject::connect(timerSimulator, SIGNAL(timeout()), this, SLOT(getSimulate()));
-    timerSimulator->start(20);
+    timerSimulator->start(10);
 }
 
 void OpenGLWidget::resizeGL(int w, int h)
@@ -247,6 +247,7 @@ void OpenGLWidget::moveCamera()
 
 void OpenGLWidget::getSimulate()
 {
+    // For delay animation
     record += 1;
     if (record < 200) return;
 

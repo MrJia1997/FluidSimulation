@@ -55,9 +55,15 @@ FORMS += \
 
 LIBS += -lopengl32 -lGLU32
 INCLUDEPATH += C:/dev/Eigen-3.3.5
+INCLUDEPATH += C:/Env/eigen-3.3.7
 
 DISTFILES += \
     scene/wall.frag \
     scene/wall.vert \
     scene/particle.frag \
     scene/particle.vert
+
+# OpenMP Enabled
+#LIBS += -L"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Tools\MSVC\14.16.27023\lib\x64" -lopenmp
+QMAKE_CXXFLAGS += -openmp
+QMAKE_LFLAGS +=  -openmp
