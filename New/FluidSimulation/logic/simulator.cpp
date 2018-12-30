@@ -6,6 +6,11 @@
 #include <qDebug>
 #include <fstream>
 #include <cmath>
+#include <algorithm>
+#include <iostream>
+
+#include <Eigen/Core>
+#include <Eigen/SVD>
 
 using namespace SmoothKernel;
 
@@ -244,5 +249,85 @@ void Simulator::calcIsosurface() {
     // Reconstructing Surfaces of Particle-Based Fluids Using Anisotropic Kernels
     // Yu J, Turk G. Siggraph 2010
 
+    typedef Eigen::Vector3d Vec3d;
+    typedef Eigen::Matrix3d Mat3d;
+    using namespace Eigen;
+
+    auto weight = [](const Vec3d& r) {
+        double r_norm = r.norm();
+        if (r_norm < KERNEL_H)
+            return 1 - pow(r_norm / KERNEL_H, 3);
+        else
+            return 0.0;
+    };
+
+    auto vvT = [](const Vec3d& v) {
+        return v * v.transpose();
+    };
+
+    int i = 0, size = particles.size();
+
+    // Calculate Gi
+    std::vector<Vec3d> x_weighted(size,Vec3d::Zero());
+    std::vector<Mat3d> C(size, Mat3d::Zero());
+    std::vector<Mat3d> G(size, Mat3d::Zero());
+
+//#pragma omp parallel for
+    for (i = 0; i < size; i++) {
+        if (particles[i].neighbors.empty())
+            continue;
+
+        double weight_sum = 0.0;
+        for (int neighbor : particles[i].neighbors) {
+            Vec3d r = QtEigen(particles[i].position - particles[neighbor].position);
+            double w = weight(r);
+            weight_sum += w;
+            x_weighted[i] += w * QtEigen(particles[neighbor].position);
+        }
+        x_weighted[i] /= weight_sum;
+    }
+
+//#pragma omp parallel for
+    for (i = 0; i < size; i++) {
+        if (particles[i].neighbors.empty())
+            continue;
+
+        double weight_sum = 0.0;
+        for (int neighbor : particles[i].neighbors) {
+            Vec3d r = QtEigen(particles[i].position - particles[neighbor].position);
+            double w = weight(r);
+            weight_sum += w;
+            C[i] += w * vvT(QtEigen(particles[neighbor].position) - x_weighted[i]);
+        }
+        C[i] /= weight_sum;
+    }
+
+
+    double kr = 4, ks = 1400, kn = 0.5, Neps = 25;
+
+//#pragma omp parallel for
+    for (i = 0; i < size; i++) {
+        // Here C[i] is symmetric for sure
+        // Using SVD and we will get C[i] = U(\Sigma)V', here U = V
+        JacobiSVD<Mat3d> svd(C[i], ComputeFullU | ComputeFullV);
+        Mat3d u = svd.matrixU(),
+                eigens = svd.singularValues().asDiagonal(),
+                v = svd.matrixV();
+
+        Mat3d eigens_tilde = Mat3d::Identity();
+
+        if (particles[i].neighbors.size() > Neps) {
+            eigens_tilde(0, 0) = eigens(0, 0);
+            eigens_tilde(1, 1) = std::max(eigens(1, 1), eigens(0, 0) / kr);
+            eigens_tilde(2, 2) = std::max(eigens(2, 2), eigens(0, 0) / kr);
+            eigens_tilde *= ks;
+        }
+        else {
+            eigens_tilde *= kn;
+        }
+
+        G[i] = u * eigens_tilde.inverse() * v.transpose();
+        G[i] /= ADJ_DISTANCE;
+    }
 
 }

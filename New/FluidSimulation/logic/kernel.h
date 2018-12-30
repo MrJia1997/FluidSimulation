@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "utils.h"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -10,7 +11,7 @@ namespace SmoothKernel
 {
     double Poly6(const QVector3D& r)
     {
-        // W_Poly6(r, h) = 315 / (614pi * h^9) * (h^2 - |r|^2)^3
+        // W_Poly6(r, h) = 315 / (64pi * h^9) * (h^2 - |r|^2)^3
 
         double r_norm = r.length();
         double h = KERNEL_H;
@@ -21,6 +22,18 @@ namespace SmoothKernel
         }
 
         return 315.0 / (64.0 * MATH_PI * pow(h, 9)) * pow((h * h - r_norm * r_norm), 3);
+    }
+
+    double Poly6Anisotropic(const QVector3D& _r, const Eigen::Matrix3d& G) {
+        // For Poly6 kernel
+        // \sigma = 315 / (64 * pi)
+        // P(x) = (1 - x^2)^3
+
+        Eigen::Vector3d r = QtEigen(_r);
+        double G_det = G.determinant();
+        double Gr_norm = (G * r).norm();
+
+        return 315.0 / (64.0 * MATH_PI) * G_det * pow((1 - Gr_norm * Gr_norm), 3);
     }
 
     QVector3D SpikyGradient(const QVector3D& r)

@@ -2,6 +2,7 @@
 #define LOGIC_SIMULATOR_H
 
 #include "geometry.h"
+#include "utils.h"
 
 
 class Simulator

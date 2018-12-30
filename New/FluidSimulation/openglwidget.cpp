@@ -249,9 +249,13 @@ void OpenGLWidget::getSimulate()
 {
     // For delay animation
     record += 1;
-    if (record < 200) return;
+    if (record < 200) {
+        simulator->calcIsosurface();
+        record += 200;
+    }
 
     simulator->simulate();
+    //simulator->calcIsosurface();
     for (int i = 0; i < simulator->particles.size(); ++i)
     {
         glparticles->myupdate(i, simulator->particles[i].predPosition);

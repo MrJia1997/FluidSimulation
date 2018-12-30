@@ -18,6 +18,7 @@ TEMPLATE = app
 
 DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++11
+CONFIG += console
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -35,7 +36,8 @@ SOURCES += \
     main.cpp \
     openglwidget.cpp \
     glwalls.cpp \
-    glparticles.cpp
+    glparticles.cpp \
+    logic/utils.cpp
 
 HEADERS += \
         glslwidget.h \
@@ -48,7 +50,8 @@ HEADERS += \
     glslwidget.h \
     openglwidget.h \
     glwalls.h \
-    glparticles.h
+    glparticles.h \
+    logic/utils.h
 
 FORMS += \
         glslwidget.ui
