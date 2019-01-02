@@ -1,6 +1,9 @@
+//#define DEBUG_MODE
+
 #include "constants.h"
 #include "kernel.h"
 #include "simulator.h"
+#include "marchingcube.h"
 
 #include <omp.h>
 #include <qDebug>
@@ -18,6 +21,7 @@ Simulator::Simulator(): gravity(0.0, -9.8, 0.0)
 {
     numParticles = 0;
     buildCubeFluid(QVector3D(0.0, 0.0, 0.5), 10, 10, 10);
+    printScalar = true;
 }
 
 Simulator::~Simulator()
@@ -244,7 +248,7 @@ void Simulator::simulate()
     // qDebug() << "that 719" << particles[719].position << particles[719].velocity;
 }
 
-void Simulator::calcIsosurface() {
+void Simulator::calcIsosurface(std::vector<Triangle> &mesh) {
     // Implemented according to
     // Reconstructing Surfaces of Particle-Based Fluids Using Anisotropic Kernels
     // Yu J, Turk G. Siggraph 2010
@@ -269,10 +273,13 @@ void Simulator::calcIsosurface() {
 
     // Calculate Gi
     std::vector<Vec3d> x_weighted(size,Vec3d::Zero());
+    std::vector<Vec3d> x_bar(size, Vec3d::Zero());
+    std::vector<double> density(size, 0.0);
     std::vector<Mat3d> C(size, Mat3d::Zero());
     std::vector<Mat3d> G(size, Mat3d::Zero());
 
-//#pragma omp parallel for
+    double lambda = 0.9;
+#pragma omp parallel for
     for (i = 0; i < size; i++) {
         if (particles[i].neighbors.empty())
             continue;
@@ -285,9 +292,10 @@ void Simulator::calcIsosurface() {
             x_weighted[i] += w * QtEigen(particles[neighbor].position);
         }
         x_weighted[i] /= weight_sum;
+        x_bar[i] = (1 - lambda) * QtEigen(particles[i].position) + lambda * x_weighted[i];
     }
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (i = 0; i < size; i++) {
         if (particles[i].neighbors.empty())
             continue;
@@ -305,7 +313,7 @@ void Simulator::calcIsosurface() {
 
     double kr = 4, ks = 1400, kn = 0.5, Neps = 25;
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (i = 0; i < size; i++) {
         // Here C[i] is symmetric for sure
         // Using SVD and we will get C[i] = U(\Sigma)V', here U = V
@@ -329,5 +337,141 @@ void Simulator::calcIsosurface() {
         G[i] = u * eigens_tilde.inverse() * v.transpose();
         G[i] /= ADJ_DISTANCE;
     }
+
+
+    // Calculate scalar field
+#pragma omp parallel for
+    for (i = 0; i < size; i++) {
+        for (auto &j : particles[i].neighbors) {
+            density[i] += Poly6(particles[j].position - particles[i].position);
+        }
+    }
+
+    auto ScalarFunction = [&](QVector3D pos) {
+        // Find neighbors
+        double scalar = 0.0;
+        IntTriple index = container.indexOfPosition(pos.x(), pos.y(), pos.z());
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    IntTriple neighborIndex = index.addOffset(dx, dy, dz);
+                    if (container.particleMap.count(neighborIndex) == 0) continue;
+                    for (auto& j: container.particleMap[neighborIndex]) {
+                        scalar += Poly6Anisotropic(pos - EigenQt(x_bar[j]), G[j]) / density[j];
+                    }
+                }
+            }
+        }
+        return scalar;
+    };
+
+#ifdef DEBUG_MODE
+    std::ofstream scalar_output("scalar_output.txt", std::ios::out);
+    std::ofstream mesh_output("mesh_output.txt", std::ios::out);
+#endif
+    // Marching Cube Algorithm
+
+    double x_max = X_MAX + MARCHINGCUBE_DISTANCE,
+            x_min = X_MIN - MARCHINGCUBE_DISTANCE,
+            y_max = Y_MAX + MARCHINGCUBE_DISTANCE,
+            y_min = Y_MIN - MARCHINGCUBE_DISTANCE,
+            z_max = Z_MAX + MARCHINGCUBE_DISTANCE,
+            z_min = Z_MIN - MARCHINGCUBE_DISTANCE;
+
+    int cube_number_x = std::floor((x_max - x_min) / MARCHINGCUBE_DISTANCE);
+    int cube_number_y = std::floor((y_max - y_min) / MARCHINGCUBE_DISTANCE);
+    int cube_number_z = std::floor((z_max - z_min) / MARCHINGCUBE_DISTANCE);
+    int vertex_number = (cube_number_x + 1) * (cube_number_y + 1) * (cube_number_z + 1);
+    int cube_number = cube_number_x * cube_number_y * cube_number_z;
+    std::vector<int> scalar_storage(vertex_number, 0);
+
+#pragma omp parallel for
+    for (int i = 0; i < vertex_number; i++) {
+        int ix = i / ((cube_number_y + 1) * (cube_number_z + 1)),
+                iy = (i % ((cube_number_y + 1) * (cube_number_z + 1))) / (cube_number_z + 1),
+                iz = i % (cube_number_z + 1);
+        double x = x_min + (double)ix * MARCHINGCUBE_DISTANCE,
+                y = y_min + (double)iy * MARCHINGCUBE_DISTANCE,
+                z = z_min + (double)iz * MARCHINGCUBE_DISTANCE;
+
+        QVector3D pos(x, y, z);
+        scalar_storage[i] = ScalarFunction(pos);
+    }
+
+#ifdef DEBUG_MODE
+    if (printScalar) {
+        for (int i = 0; i < vertex_number; i++) {
+            int ix = i / ((cube_number_y + 1) * (cube_number_z + 1)),
+                    iy = (i % ((cube_number_y + 1) * (cube_number_z + 1))) / (cube_number_z + 1),
+                    iz = i % (cube_number_z + 1);
+            double x = x_min + (double)ix * MARCHINGCUBE_DISTANCE,
+                    y = y_min + (double)iy * MARCHINGCUBE_DISTANCE,
+                    z = z_min + (double)iz * MARCHINGCUBE_DISTANCE;
+
+            scalar_output << x << " " << y << " " << z << " " << scalar_storage[i] << std::endl;
+        }
+        qDebug() << "Scalar output finished.";
+    }
+#endif
+
+    double isolevel = -200.0;
+    std::vector<std::vector<Triangle>> surface_meshes(cube_number, std::vector<Triangle>());
+
+    IntTriple delta[] = {
+        IntTriple(0, 0, 0),
+        IntTriple(0, 1, 0),
+        IntTriple(1, 1, 0),
+        IntTriple(1, 0, 0),
+        IntTriple(0, 0, 1),
+        IntTriple(0, 1, 1),
+        IntTriple(1, 1, 1),
+        IntTriple(1, 0, 1)
+    };
+
+#pragma omp parallel for
+    for (int i = 0; i < cube_number; i++) {
+        int ix = i / (cube_number_y * cube_number_z),
+                iy = (i % (cube_number_y * cube_number_z)) / cube_number_z,
+                iz = i % cube_number_z;
+
+        Cube cube;
+
+        for (int j = 0; j < 8; j++) {
+            int v_ix = ix + delta[j].x;
+            int v_iy = iy + delta[j].y;
+            int v_iz = iz + delta[j].z;
+
+            int v_i = v_iz + (cube_number_z + 1) * (v_iy + (cube_number_y + 1) * v_ix);
+            double x = x_min + (double)v_ix * MARCHINGCUBE_DISTANCE,
+                    y = y_min + (double)v_iy * MARCHINGCUBE_DISTANCE,
+                    z = z_min + (double)v_iz * MARCHINGCUBE_DISTANCE;
+            cube.p[j] = QVector3D(x, y, z);
+            cube.val[j] = scalar_storage[v_i];
+        }
+
+        Polygonise(cube, isolevel, surface_meshes[i]);
+    }
+
+    mesh.clear();
+    for (auto surface : surface_meshes) {
+        mesh.insert(mesh.end(), surface.begin(), surface.end());
+    }
+
+#ifdef DEBUG_MODE
+    if (printScalar) {
+        for (auto t : mesh) {
+            for (int i = 0; i < 3; i++) {
+                mesh_output << t.p[i].x() << " " << t.p[i].y() << " " << t.p[i].z() << " ";
+            }
+            mesh_output << std::endl;
+        }
+        qDebug() << "Mesh output finished.";
+        printScalar = false;
+    }
+
+    scalar_output.close();
+    mesh_output.close();
+#endif
+
 
 }

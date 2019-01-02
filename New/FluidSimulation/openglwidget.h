@@ -3,6 +3,7 @@
 
 #include "glwalls.h"
 #include "glparticles.h"
+#include "glsurface.h"
 #include "logic/simulator.h"
 
 #include <QOpenGLWidget>
@@ -23,10 +24,13 @@ public:
 public:
     QOpenGLShaderProgram* wallProgram;
     QOpenGLShaderProgram* particleProgram;
+    QOpenGLShaderProgram* surfaceProgram;
 
     GLWalls* walls;
     GLParticles* glparticles;
+    GLSurface* glsurface;
     Simulator* simulator;
+
 
     QMatrix4x4 model;
     QMatrix4x4 view;

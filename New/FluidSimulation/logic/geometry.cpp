@@ -31,6 +31,14 @@ IntTriple CubeContainer::indexOfPosition(const Particle& p) {
 	return index;
 }
 
+IntTriple CubeContainer::indexOfPosition(const double& x,const double& y, const double& z) {
+    IntTriple index;
+    index.x = (int)std::floor(x / bucketSize);
+    index.y = (int)std::floor(y / bucketSize);
+    index.z = (int)std::floor(z / bucketSize);
+    return index;
+}
+
 void CubeContainer::add(int i, const Particle& p)
 {
 	IntTriple index = indexOfPosition(p);

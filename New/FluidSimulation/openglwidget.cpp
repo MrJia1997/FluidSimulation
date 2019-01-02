@@ -66,6 +66,12 @@ void OpenGLWidget::initializeGL()
     particleProgram->addShader(fshader2);
     particleProgram->link();
 
+    surfaceProgram = new QOpenGLShaderProgram();
+    surfaceProgram->addShader(vshader);
+    surfaceProgram->addShader(fshader);
+    surfaceProgram->link();
+
+
     qDebug() << "good1";
     simulator = new Simulator();
     /*for (int i = 0; i < 100; ++i)
@@ -85,6 +91,9 @@ void OpenGLWidget::initializeGL()
         glparticles->add(p.predPosition);
     }
     glparticles->compile();
+
+    glsurface = new GLSurface();
+    glsurface->compile();
 
     model.setToIdentity();
 
@@ -130,15 +139,13 @@ void OpenGLWidget::paintGL()
 
     particleProgram->bind();
     glparticles->render();
-    // particleProgram->release();
+    //particleProgram->release();
 
-    // wallProgram->bind();
+    //wallProgram->bind();
     walls->render();
     // wallProgram->release();
 
-    // wallProgram->release();
-
-
+    glsurface->render();
 }
 
 void OpenGLWidget::mousePressEvent(QMouseEvent *event)
@@ -248,18 +255,23 @@ void OpenGLWidget::moveCamera()
 void OpenGLWidget::getSimulate()
 {
     // For delay animation
-    record += 1;
-    if (record < 200) {
-        simulator->calcIsosurface();
-        record += 200;
-    }
+//    record += 1;
+//    if (record < 200) {
+//        simulator->calcIsosurface();
+//        record += 200;
+//    }
 
     simulator->simulate();
-    //simulator->calcIsosurface();
+    simulator->calcIsosurface(glsurface->isosurface);
+
     for (int i = 0; i < simulator->particles.size(); ++i)
     {
         glparticles->myupdate(i, simulator->particles[i].predPosition);
     }
     glparticles->hack();
+
+    glsurface->myupdate();
+    glsurface->hack();
+
     this->update();
 }

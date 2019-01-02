@@ -4,7 +4,6 @@
 #include "geometry.h"
 #include "utils.h"
 
-
 class Simulator
 {
 public:
@@ -22,6 +21,8 @@ public:
     double timeStep;
     double solverIteration;
 
+    bool printScalar;
+
 public:
     Simulator();
     ~Simulator();
@@ -30,7 +31,7 @@ public:
     void clearFluid();
     double getDensity(const Particle& p);
     void simulate();
-    void calcIsosurface();
+    void calcIsosurface(std::vector<Triangle> &mesh);
 };
 
 

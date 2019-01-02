@@ -37,7 +37,9 @@ SOURCES += \
     openglwidget.cpp \
     glwalls.cpp \
     glparticles.cpp \
-    logic/utils.cpp
+    logic/utils.cpp \
+    logic/marchingcube.cpp \
+    glsurface.cpp
 
 HEADERS += \
         glslwidget.h \
@@ -51,7 +53,9 @@ HEADERS += \
     openglwidget.h \
     glwalls.h \
     glparticles.h \
-    logic/utils.h
+    logic/utils.h \
+    logic/marchingcube.h \
+    glsurface.h
 
 FORMS += \
         glslwidget.ui

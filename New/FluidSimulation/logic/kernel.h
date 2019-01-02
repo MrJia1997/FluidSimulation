@@ -29,6 +29,14 @@ namespace SmoothKernel
         // \sigma = 315 / (64 * pi)
         // P(x) = (1 - x^2)^3
 
+        double r_norm = _r.length();
+        double h = KERNEL_H;
+
+        if (r_norm >= h)
+        {
+            return 0.0;
+        }
+
         Eigen::Vector3d r = QtEigen(_r);
         double G_det = G.determinant();
         double Gr_norm = (G * r).norm();

@@ -25,3 +25,5 @@
 #define Y_MAX 1.5
 #define Z_MIN 0.0
 #define Z_MAX 1.0
+
+#define MARCHINGCUBE_DISTANCE 0.1
