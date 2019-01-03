@@ -107,7 +107,7 @@ void OpenGLWidget::initializeGL()
 
     QTimer* timerSimulator = new QTimer(this);
     QObject::connect(timerSimulator, SIGNAL(timeout()), this, SLOT(getSimulate()));
-    timerSimulator->start(10);
+    timerSimulator->start(20);
 }
 
 void OpenGLWidget::resizeGL(int w, int h)
@@ -136,6 +136,10 @@ void OpenGLWidget::paintGL()
     particleProgram->setUniformValue("Kd", QVector3D(0.0, 0.4, 0.8));
     particleProgram->setUniformValue("Ld", QVector3D(1.0, 1.0, 1.0));
     particleProgram->setUniformValue("LightPosition", QVector3D(0.0, 0.0, 100.0));
+
+    surfaceProgram->setUniformValue("MVP", MVP);
+    surfaceProgram->setUniformValue("Eye", cameraPos);
+
 
     particleProgram->bind();
     glparticles->render();
@@ -257,12 +261,15 @@ void OpenGLWidget::getSimulate()
     // For delay animation
 //    record += 1;
 //    if (record < 200) {
-//        simulator->calcIsosurface();
-//        record += 200;
+//        return;
 //    }
 
     simulator->simulate();
     simulator->calcIsosurface(glsurface->isosurface);
+//    record += 1;
+//    if (record > 200) {
+//        simulator->calcIsosurface(glsurface->isosurface);
+//    }
 
     for (int i = 0; i < simulator->particles.size(); ++i)
     {

@@ -366,17 +366,17 @@ void Simulator::calcIsosurface(std::vector<Triangle> &mesh) {
     };
 
 #ifdef DEBUG_MODE
-    std::ofstream scalar_output("scalar_output.txt", std::ios::out);
-    std::ofstream mesh_output("mesh_output.txt", std::ios::out);
+    std::ofstream scalar_output("scalar_output.txt", std::ios::out | std::ios::app);
+    std::ofstream mesh_output("mesh_output.txt", std::ios::out | std::ios::app);
 #endif
     // Marching Cube Algorithm
 
-    double x_max = X_MAX + MARCHINGCUBE_DISTANCE,
-            x_min = X_MIN - MARCHINGCUBE_DISTANCE,
-            y_max = Y_MAX + MARCHINGCUBE_DISTANCE,
-            y_min = Y_MIN - MARCHINGCUBE_DISTANCE,
-            z_max = Z_MAX + MARCHINGCUBE_DISTANCE,
-            z_min = Z_MIN - MARCHINGCUBE_DISTANCE;
+    double x_max = X_MAX + 2 * ADJ_DISTANCE,
+            x_min = X_MIN - 2 * ADJ_DISTANCE,
+            y_max = Y_MAX + 2 * ADJ_DISTANCE,
+            y_min = Y_MIN - 2 * ADJ_DISTANCE,
+            z_max = Z_MAX + 2 * ADJ_DISTANCE,
+            z_min = Z_MIN - 2 * ADJ_DISTANCE;
 
     int cube_number_x = std::floor((x_max - x_min) / MARCHINGCUBE_DISTANCE);
     int cube_number_y = std::floor((y_max - y_min) / MARCHINGCUBE_DISTANCE);
@@ -414,7 +414,7 @@ void Simulator::calcIsosurface(std::vector<Triangle> &mesh) {
     }
 #endif
 
-    double isolevel = -200.0;
+    double isolevel = -100.0;
     std::vector<std::vector<Triangle>> surface_meshes(cube_number, std::vector<Triangle>());
 
     IntTriple delta[] = {
